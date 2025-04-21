@@ -17,6 +17,7 @@
 #include <Button2.h>
 #include <DallasTemperature.h>
 #include <OneWire.h>
+#include <ModbusIP_ESP8266.h>
 
 #pragma region Setup
 
@@ -36,6 +37,11 @@ constexpr int ONE_WIRE_BUS_PIN = 13;       // Pin for DS18B20 sensor
 OneWire oneWire(ONE_WIRE_BUS_PIN);         // Setup a oneWire instance
 DallasTemperature dallasSensors(&oneWire); // Pass oneWire reference to Dallas Temperature
 
+// ModbusIP object
+ModbusIP modbus;
+// Modbus Registers Offsets
+const int MODBUS_SENSOR_IREG = 100;
+
 #include "setup.h"
 
 void setup()
@@ -51,6 +57,23 @@ void setup()
   // Initialize buttons and TFT display
   button_setup();
   display_setup();
+
+  WiFi.begin("name", "passwords");
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+    display.print(".");
+  }
+
+  display.print("connected to WiFi: ");
+  display.println(WiFi.localIP());
+  delay(2500);
+
+  constexpr int MODBUS_PORT = 502; // Modbus TCP port
+  modbus.server(502);              // Start Modbus IP
+  // Add MODBUS_SENSOR_IREG register - Use addIreg() for analog Inputs
+  modbus.addIreg(MODBUS_SENSOR_IREG);
 }
 
 #pragma endregion Setup
@@ -61,6 +84,9 @@ void button_loop();
 
 void loop()
 {
+  // Call once inside loop() - all magic here
+  modbus.task();
+
   button_loop();
 
   const float distanceCm = get_distance_cm_from_ultrasound_sensor();
@@ -74,6 +100,12 @@ void loop()
   display.setCursor(0, 0);
   display.print("Distance (cm): ");
   display.println(distanceCm);
+
+  // Convert distanceCm from float to uint16_t
+  uint16_t distanceCmUint16 = static_cast<uint16_t>(distanceCm);
+
+  // Update Modbus register with the converted value
+  modbus.Ireg(MODBUS_SENSOR_IREG, distanceCmUint16);
 
   delay(1000); // Wait for 1 second
 }
