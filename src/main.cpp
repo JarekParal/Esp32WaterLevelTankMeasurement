@@ -19,6 +19,8 @@
 #include <OneWire.h>
 #include <ModbusIP_ESP8266.h>
 
+#include "credentials.h"
+
 #pragma region Setup
 
 constexpr int BUTTON_1_PIN = 35;
@@ -57,9 +59,6 @@ void setup()
   // Initialize buttons and TFT display
   button_setup();
   display_setup();
-
-  const char wifi_name[] = "iot";
-  const char wifi_password[] = "password";
 
   Serial.print("\nConnecting to WiFi:\n");
   Serial.print(wifi_name);
