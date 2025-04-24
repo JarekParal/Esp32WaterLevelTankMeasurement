@@ -58,7 +58,15 @@ void setup()
   button_setup();
   display_setup();
 
-  WiFi.begin("name", "passwords");
+  const char wifi_name[] = "iot";
+  const char wifi_password[] = "password";
+
+  Serial.print("\nConnecting to WiFi:\n");
+  Serial.print(wifi_name);
+  display.print("\nConnecting to WiFi:\n");
+  display.println(wifi_name);
+
+  WiFi.begin(wifi_name, wifi_password);
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
@@ -66,7 +74,9 @@ void setup()
     display.print(".");
   }
 
-  display.print("connected to WiFi: ");
+  Serial.print("\nConnected to IP:\n");
+  Serial.print(WiFi.localIP());
+  display.print("\nConnected - IP:\n");
   display.println(WiFi.localIP());
   delay(2500);
 
