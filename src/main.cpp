@@ -81,6 +81,10 @@ void setup()
 // Function prototypes
 float get_distance_cm_from_ultrasound_sensor();
 void button_loop();
+float check_max_change(float previousReading, float currentReading, float maxAllowedChange);
+
+uint16_t lastDistanceCmUint16 = 0;         // Variable to store distance in cm
+uint16_t maximalChangeBetweenReadings = 5; // Maximal change between readings
 
 void loop()
 {
@@ -104,6 +108,10 @@ void loop()
   // Convert distanceCm from float to uint16_t
   uint16_t distanceCmUint16 = static_cast<uint16_t>(distanceCm);
 
+  // Check the maximal change between readings
+  distanceCmUint16 = static_cast<uint16_t>(check_max_change(lastDistanceCmUint16, distanceCmUint16, maximalChangeBetweenReadings));
+  lastDistanceCmUint16 = distanceCmUint16; // Update last distance
+
   // Update Modbus register with the converted value
   modbus.Ireg(MODBUS_SENSOR_IREG, distanceCmUint16);
 
@@ -124,11 +132,11 @@ float get_distance_cm_from_ultrasound_sensor()
 
   // Clear the trigPin
   digitalWrite(ULTRASOUND_TRIGER_PIN, LOW);
-  delayMicroseconds(2);
+  delayMicroseconds(5);
 
   // Trigger ultrasonic pulse
   digitalWrite(ULTRASOUND_TRIGER_PIN, HIGH);
-  delayMicroseconds(10);
+  delayMicroseconds(20);
   digitalWrite(ULTRASOUND_TRIGER_PIN, LOW);
 
   // Measure pulse duration
@@ -136,4 +144,15 @@ float get_distance_cm_from_ultrasound_sensor()
 
   // Calculate distance in cm
   return (duration * SOUND_SPEED) / 2;
+}
+
+// Function to check the maximal change between readings and return the corresponding value
+float check_max_change(float previousReading, float currentReading, float maxAllowedChange)
+{
+  float change = abs(currentReading - previousReading);
+  if (change > maxAllowedChange)
+  {
+    return previousReading; // Return the previous reading if the change exceeds the allowed maximum
+  }
+  return currentReading; // Return the current reading if the change is within the allowed maximum
 }
